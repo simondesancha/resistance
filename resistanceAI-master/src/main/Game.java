@@ -1,4 +1,4 @@
-package main;
+package src.main;
 import java.util.*;
 import java.io.*;
 /**
@@ -11,7 +11,7 @@ public class Game{
   private Map<Character,Agent> players;
   private Set<Character> spies;
   private String playerString = "";
-  private String spyString = "";
+  public String spyString = "";
   private String resString = "";
   private int numPlayers = 0;
   private static final int[] spyNum = {2,2,3,3,3,4}; //spyNum[n-5] is the number of spies in an n player game

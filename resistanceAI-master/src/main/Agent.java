@@ -8,7 +8,7 @@
  * If actions do not meet the required specification, a nominated default action will be recorded.
  * @author Tim French
  * **/
-package main;
+package src.main;
 
 public interface Agent{
 

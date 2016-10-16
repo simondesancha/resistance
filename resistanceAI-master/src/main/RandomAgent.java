@@ -1,4 +1,4 @@
-package main;
+package src.main;
 import java.util.*;
 
 /**
@@ -20,7 +20,7 @@ import java.util.*;
 
 public class RandomAgent implements Agent{
 
-  private String name;
+  public String name;
   private String players;
   public boolean spy;
   private Random random;
