@@ -8,110 +8,123 @@ import java.util.Random;
 
 
 
-/**
- *
- * Fails ~20 - %30 when versing random agent
- */
-public class myBot implements Agent {
-    
+public class bayBot implements Agent {
     boolean ifSpy;
     private char name;
     private char spyList[];
     private char playerList[];
+    private char team[];
     int missionNumber;
+    int missionID;
     int numPlayers;
+    int numMissions;
     Random rand;
-    
+
     boolean voteValue;
+    int numPlayersOnMission;
+
+    bayStats baysian;
     
-    private static final double betrayProb[] = {0.4, 0.8, 0.8, 0.8, 0.8};
+    bayBot()
+    {
+        
+    }
+    
+    public double[] getSuspicion()
+    {
+        return baysian.getSuspicion();
+    }
+    
+    public int getPlayerIndex(char player)
+    {
+        for(int i = 0; i < numPlayers; i++)
+            if(playerList[i] == player)
+                return i;
+        return 0;
+    }
+    
+    public char indexToChar(int index)
+    {
+        return playerList[index];
+    }
     
     @Override
     public void get_status(String name, String players, String spies, int mission, int failures) {
         this.name = name.charAt(0);
         this.playerList = players.toCharArray();
         this.missionNumber = mission;
+        missionID = mission-1;
         numPlayers = players.length();
+        numMissions = 5; //I'm guessing
         ifSpy = (spies.contains(name));
         spyList = spies.toCharArray();
         
         rand = new Random();
         
-        //System.out.printf("Spy: %d\n", ifSpy ? 1 : 0);
+        if(missionID == 0)
+        {
+            baysian = new bayStats(numPlayers, numMissions, playerList);
+        }
+        else
+        {
+            baysian.updateMission(missionID);
+            baysian.updateSuspicion();
+        }
     }
 
     @Override
     public String do_Nominate(int number) {
         String s = new String();
         s += name;
-        for(int i = 0; i < number-1; i++)
+        
+        for(char i : baysian.getTeam(number - 1))
         {
-            char c = playerList[rand.nextInt(numPlayers)];
-            
-            while(c == name)
-                c = playerList[rand.nextInt(numPlayers)];
-            s += c;
+            s += i;
         }
+        
+        System.out.println("Our nomination: " + s.toString());
         return s;
     }
-
+    
     @Override
     public void get_ProposedMission(String leader, String mission) {
-        char team[] = mission.toCharArray();
+        team = mission.toCharArray();
         
-        if(missionNumber == 5)
-        {
-            voteValue = !ifSpy;
-            return;
-        }
-        else if(ifSpy)
-        {
-            int numSpies = 0;
-            for(char c : team)
-                for(char x : spyList)
-                    if(x == c) numSpies++;
-            
-            voteValue = numSpies > 1;
-            return;
-        }
-        
-        boolean haveMe = false;
-        for(char c : team)
-            if(c == name)
-                haveMe = true;
-        
-        if(!haveMe && team.length == 3)
-        {
-            voteValue = false;
-            return;
-        }
-        voteValue = true;        
+        //Log the nominations:
+        baysian.logNominations(leader, team);
     }
 
     @Override
     public boolean do_Vote() {
-        return voteValue;
+        int group[] = new int[team.length];
+        
+        for (int i = 0; i < team.length; i++) {
+            group[i] = getPlayerIndex(team[i]);
+        }
+            
+        return baysian.containsSpy(group);
     }
 
+    
+    
     @Override
     public void get_Votes(String yays) {
-        
+        baysian.logVotes(yays);
     }
 
     @Override
     public void get_Mission(String mission) {
+        baysian.logMission(mission);
     }
 
     @Override
     public boolean do_Betray() {
-        boolean result;
-        result = (Math.random() < betrayProb[this.missionNumber-1]);
-        
-        return result;
+        return true;
     }
 
     @Override
     public void get_Traitors(int traitors) {
+        baysian.logTraitors(traitors);       
     }
 
     @Override
@@ -122,5 +135,4 @@ public class myBot implements Agent {
     @Override
     public void get_Accusation(String accuser, String accused) {
     }
-    
 }

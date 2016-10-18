@@ -12,30 +12,23 @@ package src.main;
  */
 public class testGame {
     public static void main(String[] args) {
-        int fails = 0;
-        for(int i = 0; i < 1; i++)
-        {
-            if(doGame())
-                fails++;
-        }
-        
-        System.out.printf("numFails: %d\n", fails);
+        doGame();
     }
     
     
-    static boolean doGame()
+    static void doGame()
     {
         Game g = new Game();
-        statBot b = new statBot();
+        spySplitter b = new spySplitter();
         Agent r[] = new myBot[4];
         for (int i = 0; i < 4; i++) {
             r[i] = new myBot();
         }
         g.stopwatchOn();g.addPlayer(b);g.stopwatchOff(1000,'A');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'B');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'C');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'D');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'E');
+        g.stopwatchOn();g.addPlayer(r[0]);g.stopwatchOff(1000,'B');
+        g.stopwatchOn();g.addPlayer(r[1]);g.stopwatchOff(1000,'C');
+        g.stopwatchOn();g.addPlayer(r[2]);g.stopwatchOff(1000,'D');
+        g.stopwatchOn();g.addPlayer(r[3]);g.stopwatchOff(1000,'E');
         g.setup();
         
         System.out.println("Spys:" + g.spyString);
@@ -50,18 +43,12 @@ public class testGame {
   //          System.out.printf("%d\n", r[i].spy ? 1 : 0);
     //    }
         
-        boolean ifSpy = b.ifSpy;
         boolean spyWin = g.play();
         
         if(spyWin)
             System.out.println("Spy wins!------\n");
         else
             System.out.println("resistance Wins!\n");
-        
-        
-        
-        
-        return ifSpy != spyWin;
     }
     
     static boolean doRandom()

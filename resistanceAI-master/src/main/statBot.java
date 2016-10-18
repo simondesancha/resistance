@@ -27,23 +27,17 @@ public class statBot implements Agent {
     boolean voteValue;
     int numPlayersOnMission;
     
-    //Statistics:
-    int nominationLog[][];
-    boolean missionVotes[][]; // [mission number][player vote] == pass/fail
-    boolean missionPlayers[][]; //[mission number][player id] == if on/off mission
-    float missionSuccess[]; // [mission number] == num betrays (success if 0)
+    statsClass stats;
+    double values[];
     
-    //Suspicion tables:
-    float suspicion[]; // [player id]  = suspicion value
-    float suspicionTableValues[];
-    
-    //Suspicion table indexes:
-    private static final int PLAYER_ON_FAILED_MISSION = 0;
-    private static final int PLAYER_VOTES_FOR_FAILED_MISSION = 1;
-    
-    statBot()
+    statBot(double values[])
     {
-        
+        this.values = values;
+    }
+    
+    public double[] getSuspicion()
+    {
+        return stats.getSuspicion();
     }
     
     public int getPlayerIndex(char player)
@@ -54,60 +48,9 @@ public class statBot implements Agent {
         return 0;
     }
     
-    private void initArrays()
-    {
-        //Stats:
-        nominationLog = new int[numPlayers][numPlayers]; //should be already filled with zeros
-        missionVotes = new boolean[numMissions][numPlayers];
-        missionPlayers = new boolean[numMissions][numPlayers];
-        missionSuccess = new float[numMissions];
-        
-        //Suspicion:
-        suspicion = new float[numPlayers];
-        Arrays.fill(suspicion, (float)1/numPlayers);
-        
-        //for testing:
-        suspicionTableValues = new float[5];
-        suspicionTableValues[PLAYER_ON_FAILED_MISSION] = (float) 30; //ie double the suspicion
-        suspicionTableValues[PLAYER_VOTES_FOR_FAILED_MISSION] = (float) 1.5; //ie double the suspicion
-    }
+
     
-    
-    private void updateSuspicion()
-    {
-        //First look at the previous mission and the players on them:
-        if(missionSuccess[missionID-1] > 0)
-        {
-            for (int i = 1; i < numPlayers; i++)
-            {
-                if(missionPlayers[missionID-1][i] == true)
-                {
-                    System.out.printf("%d was on failed mission\n", i);
-                    //This player was on a mission, do suspicion calc
-                    suspicion[i] *= suspicionTableValues[PLAYER_ON_FAILED_MISSION]*missionSuccess[missionID-1]*missionSuccess[missionID-1];
-                }
-            }
-        }
-        
-        //Now look at who voted for a failed mission
-        if(missionSuccess[missionID-1] > 0)
-        {
-            for (int i = 0; i < numPlayers; i++)
-            {
-                if(missionVotes[missionID-1][i] == true)
-                {
-                    System.out.printf("%d voted for a failed mission\n", i);
-                    //This player was on a mission, do suspicion calc
-                    suspicion[i] *= suspicionTableValues[PLAYER_VOTES_FOR_FAILED_MISSION];
-                }
-            }
-        }
-        
-        System.out.println("Suspicion Values: ");
-        for (int i = 1; i < numPlayers; i++) {
-            System.out.printf("%f\n", suspicion[i]);
-        }
-    }
+  
      
     //See if the previous mission passed
   /*  private void checkOutcome(int failures)
@@ -142,14 +85,15 @@ public class statBot implements Agent {
         
         if(missionID == 0)
         {
-            System.out.printf("Spy: %d\n", ifSpy ? 1 : 0);
+            //System.out.printf("Spy: %d\n", ifSpy ? 1 : 0);
             
-            initArrays();
+            stats = new statsClass(numPlayers, numMissions, playerList, values);
         }
         else
         {
          //   checkOutcome(failures);   
-            updateSuspicion();
+            stats.updateMission(missionID);
+            stats.updateSuspicion();
         }
     }
 
@@ -173,7 +117,7 @@ public class statBot implements Agent {
         char team[] = mission.toCharArray();
         
         //Log the nominations:
-        logNominations(leader, team);
+        stats.logNominations(leader, team);
         
         if(missionNumber == 5)
         {
@@ -213,12 +157,12 @@ public class statBot implements Agent {
     
     @Override
     public void get_Votes(String yays) {
-        logVotes(yays);
+        stats.logVotes(yays);
     }
 
     @Override
     public void get_Mission(String mission) {
-        this.logMission(mission);
+        stats.logMission(mission);
     }
 
     @Override
@@ -228,12 +172,7 @@ public class statBot implements Agent {
 
     @Override
     public void get_Traitors(int traitors) {
-        missionSuccess[missionID] = (float)traitors/numPlayersOnMission;
-        
-        if(traitors ==  0)
-            System.out.println("Mission passed");
-        else
-            System.out.printf("Mission failed with %d traitors\n", traitors);        
+        stats.logTraitors(traitors);       
     }
 
     @Override
@@ -244,34 +183,4 @@ public class statBot implements Agent {
     @Override
     public void get_Accusation(String accuser, String accused) {
     }
-    
-    
-    private void logNominations(String leader, char team[])
-    {
-        int leaderIndex = getPlayerIndex(leader.charAt(0));
-        
-        for(char player : team)
-            nominationLog[leaderIndex][getPlayerIndex(player)]++;
-    }
-    
-    private void logVotes(String yays)
-    {
-        char votesYay[] = yays.toCharArray();
-        
-        Arrays.fill(missionVotes[missionID], false);
-        for(char player : votesYay)
-            missionVotes[missionID][getPlayerIndex(player)] = true;
-    }
-    
-    private void logMission(String mission)
-    {
-        char team[] = mission.toCharArray();
-        
-        Arrays.fill(missionPlayers[missionID], false);
-        for(char player : team)
-            missionPlayers[missionID][getPlayerIndex(player)] = true;
-        
-        numPlayersOnMission = team.length;
-    }
-    
 }
