@@ -1,0 +1,3 @@
+When doing the GA based on the maximum suspicion values, very quickly converged to:
+	 {0.43, 0.27, 0.99, 0.49, 0.51, 0.09, 0.08};
+but was not good when actually versing the bots (%63 failure)

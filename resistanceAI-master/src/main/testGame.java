@@ -11,18 +11,37 @@ package src.main;
  * @author Owner
  */
 public class testGame {
+    
+    private static final double values[] = {0.06, 0.15, 0.99, 0.93, 0.97, 0.18, 0.50};
+    
     public static void main(String[] args) {
-        doGame();
+        GA();
+        //tournaments();
     }
     
+    static void tournaments()
+    {
+        int spyWins = 0;
+        for (int i = 0; i < 100; i++) {
+            spyWins += doGame() ? 1 : 0;
+        }
+        
+        System.out.println("Spy wins: " + spyWins);
+    }
     
-    static void doGame()
+    static void GA()
+    {
+        simonGA GA = new simonGA();
+        GA.runGA();
+    }
+    
+    static boolean doGame()
     {
         Game g = new Game();
         spySplitter b = new spySplitter();
-        Agent r[] = new myBot[4];
+        spySplitter r[] = new spySplitter[4];
         for (int i = 0; i < 4; i++) {
-            r[i] = new myBot();
+            r[i] = new spySplitter(values);
         }
         g.stopwatchOn();g.addPlayer(b);g.stopwatchOff(1000,'A');
         g.stopwatchOn();g.addPlayer(r[0]);g.stopwatchOff(1000,'B');
@@ -31,12 +50,12 @@ public class testGame {
         g.stopwatchOn();g.addPlayer(r[3]);g.stopwatchOff(1000,'E');
         g.setup();
         
-        System.out.println("Spys:" + g.spyString);
+      //  System.out.println("Spys:" + g.spyString);
         char spies[] = g.spyString.toCharArray();
         
         for(char s : spies)
         {
-            System.out.printf("%d\n", b.getPlayerIndex(s));
+          //  System.out.printf("%d\n", b.getPlayerIndex(s));
         }
         
 //        for (int i = 0; i < 4; i++) {
@@ -45,10 +64,12 @@ public class testGame {
         
         boolean spyWin = g.play();
         
-        if(spyWin)
+    /*    if(spyWin)
             System.out.println("Spy wins!------\n");
         else
             System.out.println("resistance Wins!\n");
+      */  
+        return spyWin;
     }
     
     static boolean doRandom()

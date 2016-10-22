@@ -4,30 +4,33 @@
  * and open the template in the editor.
  */
 package src.main;
+import java.util.Arrays;
 import java.util.Random;
 
 
 
 public class bayBot implements Agent {
-    boolean ifSpy;
     private char name;
-    private char spyList[];
     private char playerList[];
     private char team[];
-    int missionNumber;
+    private char leader;
     int missionID;
     int numPlayers;
     int numMissions;
     Random rand;
 
-    boolean voteValue;
-    int numPlayersOnMission;
-
+    //Statistics
     bayStats baysian;
+    double setValues[];
     
     bayBot()
     {
         
+    }
+    
+    bayBot(double values[])
+    {
+        setValues = values;
     }
     
     public double[] getSuspicion()
@@ -52,18 +55,19 @@ public class bayBot implements Agent {
     public void get_status(String name, String players, String spies, int mission, int failures) {
         this.name = name.charAt(0);
         this.playerList = players.toCharArray();
-        this.missionNumber = mission;
         missionID = mission-1;
         numPlayers = players.length();
         numMissions = 5; //I'm guessing
-        ifSpy = (spies.contains(name));
-        spyList = spies.toCharArray();
         
         rand = new Random();
         
         if(missionID == 0)
         {
-            baysian = new bayStats(numPlayers, numMissions, playerList);
+            baysian = new bayStats(numPlayers, numMissions, playerList, name.charAt(0));
+            
+            //Check if we are setting values (from GA)
+            if(setValues != null)
+                baysian.setValues(setValues);
         }
         else
         {
@@ -75,20 +79,18 @@ public class bayBot implements Agent {
     @Override
     public String do_Nominate(int number) {
         String s = new String();
-        s += name;
         
-        for(char i : baysian.getTeam(number - 1))
-        {
+        for(char i : baysian.getTeam(number))
             s += i;
-        }
         
-        System.out.println("Our nomination: " + s.toString());
+      //  System.out.println("Our " + getPlayerIndex(name) + " nomination: " + s.toString());
         return s;
     }
     
     @Override
     public void get_ProposedMission(String leader, String mission) {
         team = mission.toCharArray();
+        this.leader = leader.charAt(0);
         
         //Log the nominations:
         baysian.logNominations(leader, team);
@@ -101,6 +103,8 @@ public class bayBot implements Agent {
         for (int i = 0; i < team.length; i++) {
             group[i] = getPlayerIndex(team[i]);
         }
+        
+        //System.out.println("Proposed team: " + Arrays.toString(group) + " from: " + leader);
             
         return baysian.containsSpy(group);
     }
@@ -114,12 +118,12 @@ public class bayBot implements Agent {
 
     @Override
     public void get_Mission(String mission) {
-        baysian.logMission(mission);
+        baysian.logMission(mission, leader);
     }
 
     @Override
     public boolean do_Betray() {
-        return true;
+        return false;
     }
 
     @Override

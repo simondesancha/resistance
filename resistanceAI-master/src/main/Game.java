@@ -85,6 +85,44 @@ public class Game{
       log("Player "+name+" added.");
     }
   }
+  
+  public void addResistance(Agent a)
+  {
+      addPlayer(a);
+  }
+  
+  public void addSpy(Agent a)
+  {
+      Character name = (char) (65 + numPlayers++);
+      players.put(name, a);
+      spies.add(name);
+      
+      log("Spy" + name + " added.");
+  }
+  
+  public void setupWithPresets(){
+      if (numPlayers < 5)
+          throw new RuntimeException("Too few players");
+      else if (started)
+          throw new RuntimeException("Game already underway");
+      else {
+          for (Character c : players.keySet()) {
+              playerString += c;
+          }
+          for (Character c : spies) {
+              spyString += c;
+              resString += '?';
+          }
+          statusUpdate(1, 0);
+          started = true;
+          log("Game set up. Spys allocated");
+      }
+  }
+  
+  public String getSpies()
+  {
+      return spies.toString();
+  }
 
   /**
    * Sets up the game and informs all players of their status.

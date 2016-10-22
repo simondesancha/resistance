@@ -7,7 +7,6 @@ package src.main;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 
 
@@ -18,6 +17,7 @@ import java.util.Random;
 public class bayStats {
     //Round info:
     char playerList[];
+    int ourIndex;
     int numPlayers;
     int numMissions;
     int missionID;
@@ -25,6 +25,7 @@ public class bayStats {
     
     //Statistics:
     int nominationLog[][];
+    int leaderLog[]; // [mission number] == leader index
     boolean missionVotes[][]; // [mission number][player vote] == pass/fail
     boolean missionPlayers[][]; //[mission number][player id] == if on/off mission
     int missionSuccess[]; // [mission number] == num betrays (success if 0)
@@ -35,18 +36,29 @@ public class bayStats {
     double suspicionTableValues[];
     
     //Suspicion table indexes:
+    private static final double defaultValues[] = {0.4, 0.8, 0.8, 0.8, 0.8, 0.8, 0.5};
+    
     private static final int SPY_BETRAYS_FIRST_MISSION = 0;
+    private static final int SPY_LEADS_FAILED_MISSION = 5; 
+    private static final int VOTE_THRESHOLD = 6;
     
     private static final int TOTAL_SPIES = 2;
     
-    bayStats(int numPlayers, int numMissions, char playerList[])
+    bayStats(int numPlayers, int numMissions, char playerList[], char name)
     {
         this.playerList = playerList;
         this.numPlayers = numPlayers;
         this.numMissions = numMissions;
         this.missionID = 0;
+        this.ourIndex = this.getPlayerIndex(name);
+        this.suspicionTableValues = defaultValues;
         
         initArrays();
+    }
+    
+    public void setValues(double values[])
+    {
+        this.suspicionTableValues = values;
     }
     
     public double[] getSuspicion()
@@ -67,18 +79,20 @@ public class bayStats {
         missionPlayers = new boolean[numMissions][numPlayers];
         missionSuccess = new int[numMissions];
         numFailedMissions = new int[numPlayers];
-        
+        leaderLog = new int[numMissions];
+                
         //Suspicion:
         suspicion = new double[numPlayers];
         Arrays.fill(suspicion, (float)1/(numPlayers-1));
+        suspicion[ourIndex] = 0;
         
         //for testing:
-        suspicionTableValues = new double[11];
-        suspicionTableValues[SPY_BETRAYS_FIRST_MISSION] = 0.4; //ie double the suspicion
-        Arrays.fill(suspicionTableValues, SPY_BETRAYS_FIRST_MISSION+1, SPY_BETRAYS_FIRST_MISSION+5, 0.8);
+        //suspicionTableValues = new double[11];
+        //suspicionTableValues[SPY_BETRAYS_FIRST_MISSION] = 0.4; //ie double the suspicion
+        //Arrays.fill(suspicionTableValues, SPY_BETRAYS_FIRST_MISSION+1, SPY_BETRAYS_FIRST_MISSION+5, 0.8);
     }
     
-    public int getPlayerIndex(char player)
+    int getPlayerIndex(char player)
     {
         for(int i = 0; i < numPlayers; i++)
             if(playerList[i] == player)
@@ -91,35 +105,35 @@ public class bayStats {
         //first check if we were on mission:
         int ifOnMission = 0;
         
-        if(missionPlayers[missionID-1][0] == true)
+        if(missionPlayers[missionID-1][ourIndex] == true)
             ifOnMission = 1;
         
         //First look at the previous mission and the players on them:
-        for (int i = 1; i < numPlayers; i++)
+        for (int i = 0; i < numPlayers; i++)
         {
             if(missionPlayers[missionID-1][i] == true)
             {
                 if(missionSuccess[missionID-1] > 0)
                 {
                     this.numFailedMissions[i]++;
-                    System.out.printf("%d was on failed mission\n", i);
+                    print(i + " was on failed mission");
                     
                     //testing:
                     
                     if(numPlayersOnMission-ifOnMission == missionSuccess[missionID-1])
-                        System.out.println("Caught perfect game");
+                        print("Caught perfect game");
 
                     double sus = baysianUpdate(missionFailedGivenSpy(numPlayersOnMission, missionSuccess[missionID-1]),
                             suspicion[i], 
                             getProbMissionOutcome(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
 
-                    //System.out.printf("old sus %f, new sus: %f\n", suspicion[i], sus);
+                    //print("old sus %f, new sus: %f\n", suspicion[i], sus);
                     suspicion[i] = sus;
                 }
                 else
                 {
                     //Mission passed
-                    System.out.printf("%d was on successful mission\n", i);
+                    print(i + " was on successful mission");
                     
                     double sus = baysianUpdate((1-missionFailedGivenSpy(numPlayersOnMission, missionSuccess[missionID-1])),
                             suspicion[i],
@@ -129,9 +143,32 @@ public class bayStats {
             }
         }
         
-        System.out.println("Suspicion Values: ");
+        //Look at the leader of the mission, as long as it's not the first
+        if(missionSuccess[missionID-1] > 0)
+        {
+            int leader = leaderLog[missionID - 1];
+            double sus = baysianUpdate(missionFailedGivenLeader(), suspicion[leader],
+                    getProbPlayerLeadsFailed(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
+            print("Leader " + leader + " failed; " + suspicion[leader] + " to " + sus);
+            suspicion[leader] = sus;
+        }
+        else
+        {
+            int leader = leaderLog[missionID - 1];
+            double sus = baysianUpdate(1 - missionFailedGivenLeader(), suspicion[leader],
+                    1 - getProbPlayerLeadsFailed(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
+            print("Leader " + leader + " passed; " + suspicion[leader] + " to " + sus);
+            suspicion[leader] = sus;
+        }
+        
+        
+        
+        //Erase our suspicion:
+        suspicion[ourIndex] = 0;
+        
+        print("Suspicion Values: ");
         for (int i = 0; i < numPlayers; i++) {
-            System.out.printf("%f\n", suspicion[i]);
+            print("" + suspicion[i]);
         }
     }
     
@@ -139,10 +176,28 @@ public class bayStats {
     
     
     //Probability:
-    
     private double baysianUpdate(double HgivenE, double H, double E)
     {
         return HgivenE*H/E;
+    }
+    
+    
+    //Estimate of A leading failed mission:
+    private double missionFailedGivenLeader()
+    {
+        return 0.05*(2*missionID - 1);
+        //return bayStats.suspicionTableValues[SPY_LEADS_FAILED_MISSION];
+    }
+    
+    private double getProbPlayerLeadsFailed(int missionSize, int numTraitors, int totalPool)
+    {
+        double result = 1;
+        
+        //result = Pr(A leads mission) * Pr(mission fails)
+        result *= (1/((double)numPlayers));
+        result *= getProbMissionOutcome(missionSize, numTraitors, totalPool);
+        
+        return result;
     }
     
     //Estimate of mission failing given spy:
@@ -182,7 +237,7 @@ public class bayStats {
         
         //Calculate binomial distribution:
         double prob = probSpyBetrays(missionSize, numTraitors);
-        return this.NchooseK(numSpies, numTraitors) * Math.pow(prob, numTraitors) * Math.pow(1 - prob, numSpies);
+        return this.NchooseK(numSpies, numTraitors) * Math.pow(prob, numTraitors) * Math.pow(1 - prob, numSpies - numTraitors);
     }
     
     
@@ -231,6 +286,8 @@ public class bayStats {
     
     public void logVotes(String yays)
     {
+        print("Yays: " + yays);
+        
         char votesYay[] = yays.toCharArray();
         
         Arrays.fill(missionVotes[missionID], false);
@@ -238,7 +295,7 @@ public class bayStats {
             missionVotes[missionID][getPlayerIndex(player)] = true;
     }
     
-    public void logMission(String mission)
+    public void logMission(String mission, char leader)
     {
         char team[] = mission.toCharArray();
         
@@ -247,6 +304,7 @@ public class bayStats {
             missionPlayers[missionID][getPlayerIndex(player)] = true;
         
         numPlayersOnMission = team.length;
+        this.leaderLog[missionID] = getPlayerIndex(leader);
     }
     
     public void logTraitors(int traitors)
@@ -254,9 +312,15 @@ public class bayStats {
         missionSuccess[missionID] = traitors;
         
         if(traitors ==  0) 
-           System.out.println("Mission passed");
+           print("Mission passed");
         else
-            System.out.printf("Mission failed with %d traitors\n", traitors); 
+            print("Mission failed with " + traitors + "traitors"); 
+    }
+    
+    private void print(String s)
+    {
+        if(ourIndex == 0) ;
+            //System.out.println(s);
     }
     
     
@@ -267,10 +331,10 @@ public class bayStats {
         List<Integer> trust = new ArrayList<>();
         
         for (int i = 0; i < length; i++) {
-            double minSus = 1;
+            double minSus = -1;
             int minIndex = 0;
-            for (int j = 1; j < numPlayers; j++) {
-                if(suspicion[j] < minSus && !trust.contains(j))
+            for (int j = 0; j < numPlayers; j++) {
+                if((suspicion[j] < minSus || minSus == -1) && !trust.contains(j))
                 {
                     minIndex = j;
                     minSus = suspicion[j];
@@ -297,7 +361,7 @@ public class bayStats {
         for (int i = 0; i < TOTAL_SPIES; i++) {
             double maxSus = 0;
             int maxIndex = 0;
-            for (int j = 1; j < numPlayers; j++) {
+            for (int j = 0; j < numPlayers; j++) {
                 if(suspicion[j] > maxSus && !spies.contains(j))
                 {
                     maxIndex = j;
@@ -307,8 +371,29 @@ public class bayStats {
             spies.add(maxIndex);
         }
         
-        System.out.println("Proposed team: " + Arrays.toString(group));
-        System.out.println("Likely spies: " + spies.toString());
+        print("Likely spies: " + spies.toString());
+        
+        //Calculate average suspiscion:
+        double avSus = 0;
+        for (int i = 0; i < numPlayers; i++) {
+            avSus += suspicion[i];
+        }
+        avSus /= numPlayers-1;
+        
+        //Calculate how badly we don't want this mission:
+        double teamSus = 0;
+        for (int i = 0; i < group.length; i++) {
+            if(spies.contains(group[i]))
+                teamSus += suspicion[i];
+        }
+        
+        double score = (teamSus/group.length) - avSus;
+        print("Av Score: " + avSus + ", this score: " + teamSus/group.length);
+        print("Score of: " + score);
+        if(score < this.suspicionTableValues[VOTE_THRESHOLD])
+        {
+            return true;
+        }
         
         for (int i = 0; i < group.length; i++) {
             if(spies.contains(group[i]))

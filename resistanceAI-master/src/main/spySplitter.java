@@ -12,9 +12,16 @@ package src.main;
 public class spySplitter implements Agent {
     private boolean ifInitialised;
     Agent bot;
+    double values[];
     
     spySplitter()
     {
+        ifInitialised = false;
+    }
+    
+    spySplitter(double values[])
+    {
+        this.values = values;
         ifInitialised = false;
     }
     
@@ -24,13 +31,16 @@ public class spySplitter implements Agent {
         {
             if((spies.contains(name)))
             {
-                System.out.println("bot is ---- Spy");
-                bot = new RandomAgent();
+               // System.out.println("bot is ---- Spy");
+                bot = new expertSpyBot();
             }
             else
             {
-                System.out.println("bot is ---- resistance");
-                bot = new bayBot();
+              //  System.out.println("bot is ---- resistance");
+                if(values != null)
+                    bot = new bayBot(values);
+                else
+                    bot = new bayBot();
             }
             this.ifInitialised = true;
         }
