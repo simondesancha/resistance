@@ -3,12 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/simonGA.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/expertSpyBot.java</file>
             <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/testGame.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/bayBot.java</file>
             <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/Game.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/statBot.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/Agent.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/myBot.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/RandomAgent.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/bayStats.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/spySplitter.java</file>
         </group>
     </open-files>
 </project-private>

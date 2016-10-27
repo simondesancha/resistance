@@ -6,27 +6,72 @@
 package src.main;
 //import System.out;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+
 /**
  *
  * @author Owner
  */
 public class testGame {
     
-    private static final double values[] = {0.06, 0.15, 0.99, 0.93, 0.97, 0.18, 0.50};
+    private static final double values[] = {0.49, 0.09, 0.80, 0.99, 0.42, 0.23, 0.08};//{0.33, 0.25, 0.39, 0.41, 0.66, 0.42, 0.00};
     
     public static void main(String[] args) {
         GA();
         //tournaments();
+        //spy();
+    }
+    
+    static boolean spy()
+    {
+        Agent agents[] = new Agent[5];
+        
+        //agents[0] = new smartSpy();
+        agents[0] = new expertSpyBot();
+        agents[1] = new expertSpyBot();
+        agents[2] = new bayBot(values);
+        agents[3] = new bayBot(values);
+        agents[4] = new bayBot(values);
+        
+        Random rand = new Random();
+        Game game = new Game();
+        
+        List<Integer> done = new ArrayList<>();
+        for (int i = 0; i < agents.length; i++) {
+           int id = rand.nextInt(5);
+           
+           while(done.contains(id))
+                id = rand.nextInt(5);
+           
+           done.add(id);
+           if(id < 2)
+           {
+               game.addSpy(agents[id]);
+           }
+           else
+           {
+               game.addResistance(agents[id]);
+           }
+        }
+        game.setupWithPresets();
+                
+        boolean spyWin = game.play();
+        
+        //System.out.println(spyWin ? "Spy win " : "resistance win");
+        return spyWin;
     }
     
     static void tournaments()
     {
         int spyWins = 0;
         for (int i = 0; i < 100; i++) {
-            spyWins += doGame() ? 1 : 0;
+            spyWins += play() ? 1 : 0;
         }
         
-        System.out.println("Spy wins: " + spyWins);
+        System.out.println("Spy wins: " + (double)spyWins);
     }
     
     static void GA()
@@ -35,72 +80,118 @@ public class testGame {
         GA.runGA();
     }
     
-    static boolean doGame()
+    Game randomlyAllocate(Agent agents[])
     {
-        Game g = new Game();
-        spySplitter b = new spySplitter();
-        spySplitter r[] = new spySplitter[4];
-        for (int i = 0; i < 4; i++) {
-            r[i] = new spySplitter(values);
+        Random rand = new Random();
+        Game game = new Game();
+        
+        List<Integer> done = new ArrayList<>();
+        for (int i = 0; i < agents.length; i++) {
+           int id = rand.nextInt(5);
+           
+           while(done.contains(id))
+                id = rand.nextInt(5);
+           
+           done.add(id);
+           if(id < 2)
+           {
+               game.addSpy(agents[i]);
+               System.out.println("Spy: " + i + " is " + ((char)(65 + i)));
+           }
+           else
+           {
+               game.addResistance(agents[i]);
+           }
         }
-        g.stopwatchOn();g.addPlayer(b);g.stopwatchOff(1000,'A');
-        g.stopwatchOn();g.addPlayer(r[0]);g.stopwatchOff(1000,'B');
-        g.stopwatchOn();g.addPlayer(r[1]);g.stopwatchOff(1000,'C');
-        g.stopwatchOn();g.addPlayer(r[2]);g.stopwatchOff(1000,'D');
-        g.stopwatchOn();g.addPlayer(r[3]);g.stopwatchOff(1000,'E');
-        g.setup();
+        game.setupWithPresets();
         
-      //  System.out.println("Spys:" + g.spyString);
-        char spies[] = g.spyString.toCharArray();
-        
-        for(char s : spies)
-        {
-          //  System.out.printf("%d\n", b.getPlayerIndex(s));
-        }
-        
-//        for (int i = 0; i < 4; i++) {
-  //          System.out.printf("%d\n", r[i].spy ? 1 : 0);
-    //    }
-        
-        boolean spyWin = g.play();
-        
-    /*    if(spyWin)
-            System.out.println("Spy wins!------\n");
-        else
-            System.out.println("resistance Wins!\n");
-      */  
-        return spyWin;
+        return game;
     }
     
-    static boolean doRandom()
+        static boolean play()
     {
-        Game g = new Game();
-        RandomAgent b = new RandomAgent();
+        //Randomly allocate bots:
+        Agent agents[] = new Agent[5];
         
         
+        agents[0] = new expertSpyBot();
+        agents[1] = new expertSpyBot();
         
-        g.stopwatchOn();g.addPlayer(b);g.stopwatchOff(1000,'A');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'B');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'C');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'D');
-        g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'E');
-        g.setup();
-        
-        boolean ifSpy = b.spy;
-        boolean spyWin = g.play();
-        
-        if(spyWin)
-            System.out.println("Spy wins!------\n");
-        else
-            System.out.println("resistance Wins!\n");
-        
-        System.out.println("Spys:");
-        
-        for (int i = 0; i < 5; i++) {
-            System.out.printf("%d");
+        //bayBot bots[] = new bayBot[3];
+        for (int i = 0; i < 3; i++) {
+            agents[2+i] = new bayBot(values);
         }
         
+        Game game = new Game();
         
-        return ifSpy != spyWin;
+        Random rand = new Random();
+        List<Integer> done = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+           int id = rand.nextInt(5);
+           
+           while(done.contains(id))
+                id = rand.nextInt(5);
+           
+           done.add(id);
+           if(id < 2)
+           {
+               game.addSpy(agents[i]);
+           }
+           else
+           {
+               game.addResistance(agents[i]);
+           }
+        }
+        
+        /*game.addSpy(spy1);
+        game.addSpy(spy2);
+        
+        for (int i = 0; i < 3; i++) {
+            game.addResistance(bots[i]);
+        }*/
+        
+        game.setupWithPresets();
+        
+        return game.play();
+    }
+    
+    static boolean play2()
+    {
+        //Randomly allocate bots:
+        Agent agents[] = new Agent[5];
+        
+        
+        agents[0] = new expertSpyBot();
+        agents[1] = new expertSpyBot();
+        
+        //bayBot bots[] = new bayBot[3];
+        for (int i = 0; i < 3; i++) {
+            agents[2+i] = new bayBot(values);
+        }
+        
+        Game game = new Game();
+        
+        Random rand = new Random();
+        List<Integer> done = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+           int id = rand.nextInt(5);
+           
+           while(done.contains(id))
+                id = rand.nextInt(5);
+           
+           done.add(id);
+           if(id < 2)
+           {
+               game.addSpy(agents[id]);
+           }
+           else
+           {
+               game.addResistance(agents[id]);
+           }
+        }
+        
+        game.setupWithPresets();
+        
+        return game.play();
     }
 }

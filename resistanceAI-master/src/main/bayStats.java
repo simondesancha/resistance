@@ -86,10 +86,6 @@ public class bayStats {
         Arrays.fill(suspicion, (float)1/(numPlayers-1));
         suspicion[ourIndex] = 0;
         
-        //for testing:
-        //suspicionTableValues = new double[11];
-        //suspicionTableValues[SPY_BETRAYS_FIRST_MISSION] = 0.4; //ie double the suspicion
-        //Arrays.fill(suspicionTableValues, SPY_BETRAYS_FIRST_MISSION+1, SPY_BETRAYS_FIRST_MISSION+5, 0.8);
     }
     
     int getPlayerIndex(char player)

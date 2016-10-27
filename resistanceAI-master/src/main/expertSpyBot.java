@@ -17,10 +17,10 @@ import java.util.Random;
  */
 public class expertSpyBot implements Agent {
     
-    private char name;
+    private String name;
     private String spyList;
-    private char playerList[];
-    private char resistanceList[];
+    private String playerList;
+    private String resistanceList[];
     int missionNumber;
     int numPlayers;
     
@@ -38,29 +38,27 @@ public class expertSpyBot implements Agent {
     private static final int totalSpiesBase = 5;
     private static final int totalSpiesList[] = {2, 2, 3, 3, 3, 4}; //[numPlayer - totalSpiesBase] = number of spies in game
     
-    
-    
- //   private static final double betrayProb[] = {0.4, 0.8, 0.8, 0.8, 0.8};
-    
     @Override
     public void get_status(String name, String players, String spies, int mission, int failures) {
-        this.name = name.charAt(0);
-        this.playerList = players.toCharArray();
+        this.name = name;
+        this.playerList = players;
         this.missionNumber = mission;
         numPlayers = players.length();
         numFailures = failures;
-        rand = new Random();
         
         spyList = spies;
         //spyList = new ArrayList<Character>(Arrays.asList(spies.toCharArray()));
         
-        resistanceList = new char[players.length() - spies.length()];
+        resistanceList = new String[players.length() - spies.length()];
+        //resistanceList = new String[players.length()];
         
         int i = 0;
-        for(char p : playerList)
+        for(int j = 0; j < playerList.length(); j++)// String p : playerList)
         {
+            String p = playerList.substring(j, j+1);
+            
             //Check if player is spy
-            if(spyList.indexOf(p) < 0)
+            if(spyList.contains(p))
                     continue;
             
             resistanceList[i++] = p;            
@@ -71,22 +69,21 @@ public class expertSpyBot implements Agent {
         numMissions = 5;
         requiredFailures = 3;
         totalSpies = totalSpiesList[numPlayers-totalSpiesBase];
-        
-            
-        
-        //System.out.printf("Spy: %d\n", ifSpy ? 1 : 0);
     }
 
     //Adds ourself and only resistance players:
     @Override
     public String do_Nominate(int number) {
         String s = new String();
-        s += name;
+        s = s.concat(name);
         for(int i = 0; i < number-1; i++)
         {
-            char c = resistanceList[rand.nextInt(resistanceList.length)];
+            String c = resistanceList[(new Random()).nextInt(resistanceList.length)];
             
-            s += c;
+            //while(s.contains(c))
+              //  c = resistanceList[(new Random()).nextInt(resistanceList.length)];
+            
+            s = s.concat(c);
         }
         return s;
     }
@@ -106,12 +103,17 @@ public class expertSpyBot implements Agent {
                     numSpies++;
         }
         
+        
+      //  if(numFailures == requiredFailures-1 && (numSpies > 0))
+        //    return true;
+        
         if(missionNumber == 5)
         {
             if(numFailures == requiredFailures-1)
-                return (numSpies > 0);
+                return numSpies > 0;
         }
-        
+            
+            
         if(numSpies == team.length)
             return false;
         
@@ -130,6 +132,7 @@ public class expertSpyBot implements Agent {
 
     @Override
     public void get_Mission(String mission) {
+        missionPlayers = mission;
     }
 
     @Override
@@ -147,8 +150,8 @@ public class expertSpyBot implements Agent {
             return true;
         
         //ie need to sabotage every mission in order to win
-        if(requiredFailures - numFailures > numMissions - missionNumber)
-            return true;
+      //  if(requiredFailures - numFailures > numMissions - missionNumber)
+        //    return true;
             
         return false;
     }
