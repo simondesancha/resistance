@@ -30,7 +30,7 @@ public class simonGA {
     
     //Individual:
     private class Individual {
-        private static final int NUMBER_GENES = 7;
+        private static final int NUMBER_GENES = 6;
         double genes[];
         bayBot bot;
         
@@ -70,6 +70,37 @@ public class simonGA {
     Individual maxGene;
     
     double overAllMax = 0;
+    int maxID = 0;
+    int overAllGene = 0;
+    
+    
+    public double testEval(double values[])
+    {
+        rand = new Random();
+        double result = 0;
+        for (int j = 0; j < TOURNAMENT_LENGTH; j++) {
+            
+            Agent bots[] = new Agent[3];
+            
+            for (int i = 0; i < 3; i++) {
+                bots[i] = new bayBot(values);
+            }
+            
+            result += getResult(bots) ? 1 : 0;
+        }
+        
+        return result/TOURNAMENT_LENGTH;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     void runGA()
     {
@@ -83,11 +114,20 @@ public class simonGA {
             maxScore = 0;
             getSurvivors();
             //maxGene = survivors.get(0);
-            System.out.printf("Max score: %.2f, Genes: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", maxScore, maxGene.genes[0], maxGene.genes[1], maxGene.genes[2], maxGene.genes[3], maxGene.genes[4], maxGene.genes[5], maxGene.genes[6]);
+            System.out.printf("Max score: %.2f, Genes: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f,\n", maxScore, maxGene.genes[0], maxGene.genes[1], maxGene.genes[2], maxGene.genes[3], maxGene.genes[4], maxGene.genes[5]);
             
             if(maxScore > overAllMax)
+            {
                 overAllMax = maxScore;
+                overAllGene = maxID;
+            }
+            System.out.println("");
+            System.out.println("");
             System.out.printf("Overall max: %.2f\n", overAllMax);
+            System.out.printf("Redo: %.2f\n", getFitness_MultiplePlays(overAllGene));
+            System.out.println("");
+            System.out.println("");
+            
             
             
             createNextGeneration();
@@ -195,6 +235,7 @@ public class simonGA {
         {
             maxScore = maxResult;
             maxGene = population[ID[maxIndex]];
+            maxID = ID[maxIndex];
         }
        
         
@@ -273,6 +314,13 @@ public class simonGA {
                game.addResistance(agents[id]);
            }
         }
+       /*game.addSpy(agents[0]);
+       game.addSpy(agents[1]);
+       game.addResistance(agents[2]);
+       game.addResistance(agents[3]);
+       game.addResistance(agents[4]);*/
+       
+       
         game.setupWithPresets();
         
         return game;

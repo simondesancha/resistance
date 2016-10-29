@@ -19,6 +19,9 @@ public class Node {
         DepthLimited,
     }
     
+    
+    
+    
     int mission;
     int failures;
     nodeType type;

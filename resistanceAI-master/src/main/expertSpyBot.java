@@ -64,6 +64,9 @@ public class expertSpyBot implements Agent {
             resistanceList[i++] = p;            
         }
         
+        if(mission == 1)
+            ;//System.out.println("Spy: " + name);
+        
         
         //Game constants:
         numMissions = 5;
@@ -80,8 +83,8 @@ public class expertSpyBot implements Agent {
         {
             String c = resistanceList[(new Random()).nextInt(resistanceList.length)];
             
-            //while(s.contains(c))
-              //  c = resistanceList[(new Random()).nextInt(resistanceList.length)];
+            while(s.contains(c))
+                c = resistanceList[(new Random()).nextInt(resistanceList.length)];
             
             s = s.concat(c);
         }
@@ -104,15 +107,10 @@ public class expertSpyBot implements Agent {
         }
         
         
-      //  if(numFailures == requiredFailures-1 && (numSpies > 0))
-        //    return true;
+        if(numFailures == requiredFailures-1 && (numSpies > 0))
+            return true;
         
-        if(missionNumber == 5)
-        {
-            if(numFailures == requiredFailures-1)
-                return numSpies > 0;
-        }
-            
+        
             
         if(numSpies == team.length)
             return false;
@@ -150,8 +148,8 @@ public class expertSpyBot implements Agent {
             return true;
         
         //ie need to sabotage every mission in order to win
-      //  if(requiredFailures - numFailures > numMissions - missionNumber)
-        //    return true;
+        if(requiredFailures - numFailures > numMissions - missionNumber)
+            return true;
             
         return false;
     }

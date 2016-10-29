@@ -106,7 +106,7 @@ public class bayBot implements Agent {
         
         //System.out.println("Proposed team: " + Arrays.toString(group) + " from: " + leader);
             
-        return baysian.containsSpy(group);
+        return !baysian.containsSpy(group);
     }
 
     

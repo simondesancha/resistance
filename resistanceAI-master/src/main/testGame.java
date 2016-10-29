@@ -17,12 +17,19 @@ import java.util.Random;
  */
 public class testGame {
     
-    private static final double values[] = {0.49, 0.09, 0.80, 0.99, 0.42, 0.23, 0.08};//{0.33, 0.25, 0.39, 0.41, 0.66, 0.42, 0.00};
+    private static final double values[] = {0.95, 0.91, 0.48, 0.69, 0.64, 0.93};//{0.33, 0.25, 0.39, 0.41, 0.66, 0.42, 0.00};
     
     public static void main(String[] args) {
-        GA();
-        //tournaments();
+        //GA();
+        //GA2();
+        tournaments();
         //spy();
+    }
+    
+    static void GA2()
+    {
+        genetics2 ga = new genetics2();
+        ga.go();
     }
     
     static boolean spy()
@@ -67,7 +74,7 @@ public class testGame {
     static void tournaments()
     {
         int spyWins = 0;
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1; i++) {
             spyWins += play() ? 1 : 0;
         }
         
@@ -108,14 +115,14 @@ public class testGame {
         return game;
     }
     
-        static boolean play()
+    static boolean play()
     {
         //Randomly allocate bots:
         Agent agents[] = new Agent[5];
         
         
         agents[0] = new expertSpyBot();
-        agents[1] = new expertSpyBot();
+        agents[1] = new smartSpy();
         
         //bayBot bots[] = new bayBot[3];
         for (int i = 0; i < 3; i++) {
@@ -135,11 +142,11 @@ public class testGame {
            done.add(id);
            if(id < 2)
            {
-               game.addSpy(agents[i]);
+               game.addSpy(agents[id]);
            }
            else
            {
-               game.addResistance(agents[i]);
+               game.addResistance(agents[id]);
            }
         }
         

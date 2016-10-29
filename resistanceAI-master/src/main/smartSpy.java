@@ -109,9 +109,11 @@ public class smartSpy implements Agent {
         //Run simulation:
         MCT.doNode(currentNode);
         
-        //System.out.println("Counter: " + currentNode.counter);
+        System.out.println("Considering Voting.....");
         
-        //System.out.println("Score: " + currentNode.children[0].utility + " vs " + currentNode.children[1].utility);
+        System.out.println("Counter: " + currentNode.counter);
+        
+        System.out.println("Score: " + currentNode.children[0].utility + " vs " + currentNode.children[1].utility);
         if(currentNode.children[0].utility > currentNode.children[1].utility)
             return true;
         return false;
@@ -128,7 +130,7 @@ public class smartSpy implements Agent {
 
     @Override
     public boolean do_Betray() {
-        char team[] = missionPlayers.toCharArray();
+/*        char team[] = missionPlayers.toCharArray();
         
         int numSpies = 0;
         for (char c : team) {
@@ -144,6 +146,30 @@ public class smartSpy implements Agent {
         if(requiredFailures - numFailures > numMissions - missionNumber)
             return true;
             
+        return false;*/
+
+        currentNode = new Node();
+        currentNode.failures = this.numFailures;
+        currentNode.mission = this.missionNumber;
+        currentNode.type = Node.nodeType.doBetray;
+        currentNode.proposedMission = missionPlayers;
+        currentNode.leader = "B";
+        currentNode.leaderID = 1;//testing
+        currentNode.depth = 0;
+        
+        //Run simulation:
+        MCT.doNode(currentNode);
+        
+        System.out.println("Considering Betray.....");
+        
+        System.out.println("Counter: " + currentNode.counter);
+        
+        System.out.println("Score: " + currentNode.children[0].utility + " vs " + currentNode.children[1].utility);
+        if(currentNode.children[0].utility > currentNode.children[1].utility)
+        {
+            System.out.println("Betray true-----------------------");
+            return true;
+        }
         return false;
     }
 

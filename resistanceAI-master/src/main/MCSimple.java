@@ -11,7 +11,7 @@ import java.util.Random;
  *
  * @author root
  */
-public class MCSimulation {
+public class MCSimple {
     int numPlayers;
     int numSpies;
     Agent resistance[];
@@ -30,7 +30,7 @@ public class MCSimulation {
     private static final char NAME_BASE = 'B'; //'A' is reserved for us
     private static final String OUR_NAME = "A";
     
-    MCSimulation(int numPlayers, String spies[], String resistance[]);
+    MCSimple(int numPlayers)
     {
         this.numPlayers = numPlayers - 1;//As we don't include ourself
         numSpies = totalSpiesList[numPlayers-totalSpiesBase] - 1; 

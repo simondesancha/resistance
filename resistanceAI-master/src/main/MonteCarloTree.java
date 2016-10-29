@@ -32,7 +32,7 @@ public class MonteCarloTree {
     void doNode(Node node)
     {
         node.counter++;
-        if(node.depth > 40)
+        if(node.depth > 100)
         {
             //System.out.println("depth limit reached");
             node.type = Node.nodeType.DepthLimited;

@@ -7,6 +7,7 @@ package src.main;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 
@@ -31,6 +32,17 @@ public class bayStats {
     int missionSuccess[]; // [mission number] == num betrays (success if 0)
     int numFailedMissions[]; // [player id]
     
+    int numPossibleSpies[]; //[player id]
+    
+    Group groups[]; //[groupIndex()]
+    Group individuals[]; //[groupIndex()]
+    int maxIndex;
+    class Group {
+        double[] probAtLeastNumSpies; //[0 spy, 1 spy, 2 spy, ..] probability of AT LEAST i spies
+        double[] probExactlyNumSpies; //[0 spy, 1 spy, 2 spy, ..] probability of exactly i spies
+    }
+    
+    
     //Suspicion tables:
     double suspicion[]; // [player id]  = suspicion value
     double suspicionTableValues[];
@@ -41,6 +53,10 @@ public class bayStats {
     private static final int SPY_BETRAYS_FIRST_MISSION = 0;
     private static final int SPY_LEADS_FAILED_MISSION = 5; 
     private static final int VOTE_THRESHOLD = 6;
+    
+    private static final int TEST_1 = 0;
+    private static final int TEST_2 = 5;
+    
     
     private static final int TOTAL_SPIES = 2;
     
@@ -61,6 +77,63 @@ public class bayStats {
         this.suspicionTableValues = values;
     }
     
+    //should ignore our index
+    private int groupIndex(int group[])
+    {
+        int index = 0;
+        for(int i : group)
+            if(i != ourIndex)
+                index += Math.pow(2, i);
+        
+        if(index == 0)
+            return index;
+        
+        if(index-1 < 0 || index-1 >= maxIndex)
+            System.out.println("error2");
+        
+        return index-1;
+    }
+    
+    private int groupIndex(int index)
+    {
+        
+        return (int) Math.pow(2, index)-1;
+    }
+    
+    private int antiIndex(int group[])
+    { 
+        int index = groupIndex(group)+1;
+        
+        return (maxIndex ^ index) - 1;
+    }
+    
+    private int[] indexToGroup(int index)
+    {
+        int length = groupSize(index);
+        index++;
+        int group[] = new int[length];
+        int counter = 0;
+        
+        for (int i = 0; i < numPlayers; i++) {
+            if(i != ourIndex)
+                if((index & (0x1 << i)) > 0)
+                {
+                    if(counter >= length)        
+                        System.out.println("eror");
+                    group[counter++] = i;
+                }
+        }
+        
+        return group;
+    }
+    
+    //Returns group size of group
+    private int groupSize(int groupIndex)
+    {
+        //Need to erase ourIndex        
+        return Integer.bitCount((groupIndex+1 | (0x1 << ourIndex))^(0x1 << ourIndex));
+    }
+    
     public double[] getSuspicion()
     {
         return suspicion;
@@ -71,7 +144,7 @@ public class bayStats {
         this.missionID = missionID;
     }
     
-    private void initArrays()
+    private void initArrays() 
     {
         //Stats:
         nominationLog = new int[numPlayers][numPlayers]; //should be already filled with zeros
@@ -80,6 +153,42 @@ public class bayStats {
         missionSuccess = new int[numMissions];
         numFailedMissions = new int[numPlayers];
         leaderLog = new int[numMissions];
+        numPossibleSpies = new int[numMissions];
+        
+        for (int i = 0; i < numPlayers; i++) 
+                maxIndex += Math.pow(2, i);       
+        
+        
+        individuals = new Group[numPlayers];
+        for(int i = 0; i < numPlayers; i++)
+        {
+            individuals[i] = new Group();
+            individuals[i].probExactlyNumSpies = new double[2];
+            
+            individuals[i].probExactlyNumSpies[1] = probOfNumberSpies(1, 1, numPlayers-1);
+            individuals[i].probExactlyNumSpies[0] = 1 - individuals[i].probExactlyNumSpies[1];
+        }
+        
+        groups = new Group[maxIndex];
+        for (int i = 0; i < maxIndex; i++) {
+            groups[i] = new Group();
+            groups[i].probAtLeastNumSpies = new double[TOTAL_SPIES+1];
+            groups[i].probExactlyNumSpies = new double[TOTAL_SPIES+1];
+            
+            double counter = 0;
+            for (int j = TOTAL_SPIES; j >= 0; j--) {
+                groups[i].probExactlyNumSpies[j] = probOfNumberSpies(j, groupSize(i), numPlayers-1);//(double) (NchooseK(TOTAL_SPIES, j)*NchooseK((numPlayers-1)-TOTAL_SPIES, groupSize(i)-j)) / (double)NchooseK(numPlayers - 1, groupSize(i));
+                
+                //sum upwards
+                groups[i].probAtLeastNumSpies[j] = groups[i].probExactlyNumSpies[j];
+                if(j < TOTAL_SPIES)
+                    groups[i].probAtLeastNumSpies[j] += groups[i].probAtLeastNumSpies[j+1];
+                
+                counter += groups[i].probExactlyNumSpies[j];
+            }
+            if(counter < 0.99)
+                System.out.println("Probability fail");
+        }
                 
         //Suspicion:
         suspicion = new double[numPlayers];
@@ -96,6 +205,294 @@ public class bayStats {
         return 0;
     }
     
+    boolean ifInGroup(int index, int group[])
+    {
+        for(int i : group)
+            if(index == i)
+                return true;
+        return false;
+    }
+    
+    void doIndividualCalc(int group[], int numTraitors, int missionSize)
+    {
+        for (int i = 0; i < numPlayers; i++) 
+        {
+          /*  if(ifInGroup(i, group) && missionSize == 1)
+            {
+                //Already filled in, don't want to erase with an estimation
+                continue;
+            }
+            else*/ 
+            if(i != ourIndex && ifInGroup(i, group))
+            {
+                Group g = individuals[i];
+                
+                double probFailGivenSpy = 0;
+                double result = 0;
+                for (int j = 1; j <= TOTAL_SPIES; j++) {
+                 //   probFailGivenSpy += this.probSpyGivenAlreadySpies(1, j, missionSize, numPlayers-1) * this.probBetrayalsGivenSpies(missionSize, j, numTraitors);
+                    //result += groups[groupIndex(group)].probExactlyNumSpies[j] * (j) / (double)(missionSize);
+                    
+                  //  result += groups[groupIndex(group)].probExactlyNumSpies[j] * this.probBetrayalsGivenSpies(missionSize, TOTAL_SPIES-j, numTraitors)
+                 //                               / (1-groups[groupIndex(group)].probExactlyNumSpies[0]);
+                 
+                      double probJspiesGivenSpy = this.probSpyGivenAlreadySpies(1, j, missionSize, numPlayers-1);
+                      
+                      if(this.probOfNumberSpies(j, missionSize, numPlayers-1) == 0)
+                        continue;
+                      
+                      result +=    groups[groupIndex(group)].probExactlyNumSpies[j] *
+                                                        baysianUpdate(probJspiesGivenSpy,
+                                                                g.probExactlyNumSpies[1],
+                                                                this.probOfNumberSpies(j, missionSize, numPlayers-1));
+                }
+
+              //  g.probExactlyNumSpies[1] = baysianUpdate(result,
+                //                                    g.probExactlyNumSpies[1],
+                  //                                  this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1));
+                g.probExactlyNumSpies[1] = result;
+                //if(g.probExactlyNumSpies[1] != 1)
+                  //      g.probExactlyNumSpies[1] = Math.sqrt(result*g.probExactlyNumSpies[1]);
+
+                g.probExactlyNumSpies[0] = 1 - g.probExactlyNumSpies[1];
+            }
+            else if(i != ourIndex)
+            {
+                Group g = individuals[i];
+                
+                double result = 0;
+                double probFailGivenSpy = 0;
+                for (int j = 0; j <= TOTAL_SPIES-1; j++) {
+                    //probFailGivenSpy += this.probSpyGivenAlreadySpies(1, j, numPlayers-1 - missionSize, numPlayers-1) * this.probBetrayalsGivenSpies(missionSize, TOTAL_SPIES-j, numTraitors);
+                    //          Probability of j spies     *    prob of i  being spy
+                    //result += groups[antiIndex(group)].probExactlyNumSpies[j] * (j) / (double)(numPlayers-1 - missionSize);
+                    
+                    //Prob 1 spy in 
+                    //result += groups[groupIndex(group)].probExactlyNumSpies[j] * this.probBetrayalsGivenSpies(missionSize, TOTAL_SPIES-j, numTraitors)
+                      //                          / (1-groups[groupIndex(group)].probExactlyNumSpies[TOTAL_SPIES]);
+                      
+                      
+                      //If j spies inside group (given one already in anti) 0<j<TOTAL_SPIES-1
+                      //spies in anti-group = 1 + (TOTAL_SPIES-1) - J
+                      
+                    double probJspiesGivenSpy = this.probOfNumberSpies(j, missionSize, (numPlayers-1)-1, TOTAL_SPIES-1);
+                                  //this.probSpyGivenAlreadySpies(1, j, missionSize, numPlayers-1);
+
+                    if(this.probOfNumberSpies(j, missionSize, numPlayers-1) == 0)
+                        continue;
+
+                    result += groups[groupIndex(group)].probExactlyNumSpies[j] *
+                                                      baysianUpdate(probJspiesGivenSpy,
+                                                              g.probExactlyNumSpies[1],
+                                                              this.probOfNumberSpies(j, missionSize, numPlayers-1));
+                }
+                
+                //g.probExactlyNumSpies[1] = baysianUpdate(result,
+                //                                   g.probExactlyNumSpies[1],
+                 //                                   this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1));
+                 g.probExactlyNumSpies[1] = result;
+          //      if(g.probExactlyNumSpies[1] != 1)
+            //            g.probExactlyNumSpies[1] = Math.sqrt(result*g.probExactlyNumSpies[1]);
+                //g.probExactlyNumSpies[1] = result;
+
+                g.probExactlyNumSpies[0] = 1 - g.probExactlyNumSpies[1];
+            }
+        }
+    }    
+    
+    void calculateTeam(int group[], int team[])
+    {
+        int length = team.length;
+        Group g = groups[groupIndex(team)];
+        
+        int groupIndex = groupIndex(group);
+        int antiIndex = antiIndex(group);
+        double probNotAllSpies[] = {1 - groups[antiIndex].probAtLeastNumSpies[ groupSize(antiIndex) > TOTAL_SPIES ? TOTAL_SPIES : groupSize(antiIndex) ], //Probability anti group is not all spies
+                1 - groups[groupIndex].probAtLeastNumSpies[ groupSize(antiIndex) > TOTAL_SPIES ? TOTAL_SPIES : groupSize(antiIndex) ] // probability group is not all spies
+        };
+        
+        int numPossibleSpyCombinations = (int) Math.pow(2, length);
+        
+    /*    double probOfOne = 0;
+        for (int i = 0; i < team.length; i++) {
+            probOfOne += individuals[team[i]].probExactlyNumSpies[1];
+        }
+        
+        g.probAtLeastNumSpies[1] = probOfOne;
+      */  
+        //erase previous:
+        Arrays.fill(g.probExactlyNumSpies, 0);
+        for(int i = 0; i < numPossibleSpyCombinations; i++)
+        {
+            int numSpies = Integer.bitCount(i);
+            if(numSpies > TOTAL_SPIES)
+            {
+                //g.probExactlyNumSpies[numSpies] = 0;
+            }
+            else
+            {
+                double result = 1;
+                
+                for (int j = 0; j < length; j++) {
+                    if((i & (0x1 << j)) > 0)
+                    {
+                        //ie if team[j] is a spy
+                        //result *= groups[ifInGroup(team[j], group) ? groupIndex : antiIndex]
+                          //              .probAtLeastNumSpies[1];
+                        result *= individuals[team[j]].probExactlyNumSpies[1];
+                    }
+                    else
+                    {
+                        //ie it team[j] is resistance
+                        //result *= probNotAllSpies[ifInGroup(team[j], group) ? 1 : 0];
+                        result *= individuals[team[j]].probExactlyNumSpies[0];
+                    }
+                }
+                
+                g.probExactlyNumSpies[numSpies] += result;
+            }
+        }
+        
+        //Sum up:
+        for(int i = TOTAL_SPIES; i >= 0; i--)
+        {
+            g.probAtLeastNumSpies[i] = g.probExactlyNumSpies[i];
+            if(i < g.probAtLeastNumSpies.length-1)
+                g.probAtLeastNumSpies[i] += g.probAtLeastNumSpies[i+1];
+        }
+    }
+    
+    
+    void doAllGroups(int group[])
+    {
+        int groupIndex = groupIndex(group);
+        int antiIndex = antiIndex(group);  
+        
+        for(int i = 0; i < maxIndex; i++)
+        {
+            if(i != groupIndex && i != antiIndex
+                    && groupSize(i) != 1)
+            {
+                //print("Index:" + i);
+                check(groups[i].probExactlyNumSpies);
+                this.calculateTeam(group, this.indexToGroup(i));
+                //print("done:" + i);
+                check(groups[i].probExactlyNumSpies);
+            }
+        }
+    }
+    
+    void doGroupSubsets(int group[], int numTraitors, int missionSize)
+    {
+        //Do group first:
+        Group g = groups[groupIndex(group)];
+        int groupIndex = groupIndex(group);
+        int antiIndex = antiIndex(group);  
+        
+        for(int i = 0; i < maxIndex; i++)
+        {
+            if(i != groupIndex && i != antiIndex
+                    && groupSize(i) != 1)
+            {
+                //Make sure group is a subset of:
+                if(((i+1) & (groupIndex+1)) == (groupIndex+1))
+                {
+                    if(groups[i].probAtLeastNumSpies[1] < g.probAtLeastNumSpies[1])
+                        groups[i].probAtLeastNumSpies[1] = g.probAtLeastNumSpies[1];
+                }
+                
+                //Now anti-group:
+                if(((i+1) & (antiIndex+1)) == (antiIndex+1))
+                {
+                    if(groups[i].probAtLeastNumSpies[1] < groups[antiIndex].probAtLeastNumSpies[1])
+                        groups[i].probAtLeastNumSpies[1] = groups[antiIndex].probAtLeastNumSpies[1];
+                }
+            }
+        }
+        
+    }
+    
+    void doGroupCalc(int group[], int numTraitors, int missionSize)
+    {
+        Group g = groups[groupIndex(group)];
+        
+        //Add what we know for certain:
+        for(int i = 0; i <= numTraitors; i++)
+        {
+            g.probAtLeastNumSpies[i] = 1;
+            
+            if(i < numTraitors)
+                g.probExactlyNumSpies[i] = 0;   //ie can't have 0 spies
+            else
+            {
+                if(this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1) == 0)
+                    g.probExactlyNumSpies[i] = 0;
+                else
+                    g.probExactlyNumSpies[i] = this.probBetrayalsGivenSpies(missionSize, i, numTraitors);
+                  //      baysianUpdate(this.probBetrayalsGivenSpies(missionSize, i, numTraitors),
+                    //                            g.probExactlyNumSpies[i],
+                      //                          this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1));
+                
+            }
+                
+        }
+        
+        //Do baysian for the other spies:
+        for (int i = TOTAL_SPIES; i > numTraitors; i--) {
+            if(this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1) == 0)
+                g.probExactlyNumSpies[i] = 0;
+            else
+                g.probExactlyNumSpies[i] = this.probBetrayalsGivenSpies(missionSize, i, numTraitors);
+          //          baysianUpdate(this.probBetrayalsGivenSpies(missionSize, i, numTraitors),
+            //                                g.probExactlyNumSpies[i],
+              //                              this.getProbMissionOutcome(missionSize, numTraitors, numPlayers-1));
+            
+            //Note need to sum up
+            g.probAtLeastNumSpies[i] = g.probExactlyNumSpies[i];
+            if(i < TOTAL_SPIES)
+                g.probAtLeastNumSpies[i] += g.probAtLeastNumSpies[i+1];
+        }
+        
+        check(g.probExactlyNumSpies);
+        
+        doAntiGroupCalc(group, numTraitors, missionSize);
+    }
+    
+    void doAntiGroupCalc(int group[], int numTraitors, int missionSize)
+    {
+        Group g = groups[antiIndex(group)];
+        
+        for(int i = TOTAL_SPIES; i >= 0; i--)
+        {
+            //P(1 spy in anti-group) = P(TOTAL_SPIES - 1 spy in group)
+            g.probExactlyNumSpies[i] = groups[groupIndex(group)].probExactlyNumSpies[TOTAL_SPIES-i];
+            
+            //sum up:
+            g.probAtLeastNumSpies[i] = g.probExactlyNumSpies[i];
+            if(i < TOTAL_SPIES)
+                g.probAtLeastNumSpies[i] += g.probAtLeastNumSpies[i+1];    
+                
+        }
+    }
+    
+    void doLeaderCalc(int leader, boolean fail)
+    {
+        int leaderTeam[] = {leader};
+        
+        if(fail)
+        {
+            //DOing subset:
+            for(int i = 0; i < maxIndex; i++) {
+                if (groupSize(i) != 1) {
+                    //Make sure group is a subset of:
+                    if (this.ifInGroup(leader, indexToGroup(i)))
+                        groups[i].probAtLeastNumSpies[1] += this.suspicionTableValues[5];
+                }
+            }
+        }
+        
+    }
+    
     public void updateSuspicion()
     {
         //first check if we were on mission:
@@ -104,69 +501,108 @@ public class bayStats {
         if(missionPlayers[missionID-1][ourIndex] == true)
             ifOnMission = 1;
         
-        //First look at the previous mission and the players on them:
-        for (int i = 0; i < numPlayers; i++)
+                
+        int n = numPlayersOnMission-ifOnMission;
+        int group[] = new int[n];
+
+        int counter = 0;
+        for (int i = 0; i < numPlayers; i++) 
         {
-            if(missionPlayers[missionID-1][i] == true)
+            if (missionPlayers[missionID - 1][i] == true) 
             {
-                if(missionSuccess[missionID-1] > 0)
-                {
-                    this.numFailedMissions[i]++;
-                    print(i + " was on failed mission");
-                    
-                    //testing:
-                    
-                    if(numPlayersOnMission-ifOnMission == missionSuccess[missionID-1])
-                        print("Caught perfect game");
-
-                    double sus = baysianUpdate(missionFailedGivenSpy(numPlayersOnMission, missionSuccess[missionID-1]),
-                            suspicion[i], 
-                            getProbMissionOutcome(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
-
-                    //print("old sus %f, new sus: %f\n", suspicion[i], sus);
-                    suspicion[i] = sus;
-                }
-                else
-                {
-                    //Mission passed
-                    print(i + " was on successful mission");
-                    
-                    double sus = baysianUpdate((1-missionFailedGivenSpy(numPlayersOnMission, missionSuccess[missionID-1])),
-                            suspicion[i],
-                            (1-getProbMissionOutcome(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1)));
-                    suspicion[i] = sus;
-                }
+                print("Was on mission: " + i);
+                if(i != ourIndex)
+                    group[counter++] = i;
             }
         }
+
         
-        //Look at the leader of the mission, as long as it's not the first
-        if(missionSuccess[missionID-1] > 0)
+        if(missionSuccess[missionID - 1] > 0) 
         {
-            int leader = leaderLog[missionID - 1];
-            double sus = baysianUpdate(missionFailedGivenLeader(), suspicion[leader],
-                    getProbPlayerLeadsFailed(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
-            print("Leader " + leader + " failed; " + suspicion[leader] + " to " + sus);
-            suspicion[leader] = sus;
+            //checkAll();
+            doGroupCalc(group, missionSuccess[missionID - 1], n);
+            //checkAll();
+            //checkIndividuals();
+            doIndividualCalc(group, missionSuccess[missionID - 1], n);
+            this.doGroupSubsets(group, missionSuccess[missionID - 1], n);
+            
+            if(missionID != 1)
+                doLeaderCalc(this.leaderLog[missionID-1], missionSuccess[missionID - 1]>0);
+            //checkAll();
+            //checkIndividuals();
+            //doAllGroups(group);
+            //checkIndividuals();
+            //checkAll();
         }
         else
         {
-            int leader = leaderLog[missionID - 1];
-            double sus = baysianUpdate(1 - missionFailedGivenLeader(), suspicion[leader],
-                    1 - getProbPlayerLeadsFailed(numPlayersOnMission-ifOnMission, missionSuccess[missionID-1], numPlayers-1));
-            print("Leader " + leader + " passed; " + suspicion[leader] + " to " + sus);
-            suspicion[leader] = sus;
+            if(missionID != 1)
+                doLeaderCalc(this.leaderLog[missionID-1], missionSuccess[missionID - 1]>0);
+            doGroupCalc(group, missionSuccess[missionID - 1], n);
+            doIndividualCalc(group, missionSuccess[missionID - 1], n);
+            this.doGroupSubsets(group, missionSuccess[missionID - 1], n);
         }
-        
-        
         
         //Erase our suspicion:
         suspicion[ourIndex] = 0;
         
         print("Suspicion Values: ");
         for (int i = 0; i < numPlayers; i++) {
-            print("" + suspicion[i]);
+            if(i != ourIndex)
+                print("" + individuals[i].probExactlyNumSpies[1]);
         }
+        
+        checkIndividuals();
     }
+    
+    void checkIndividuals()
+    {
+        double x = 0;
+        for(int i = 0; i < numPlayers; i++)
+            if(i != ourIndex)
+                x += individuals[i].probExactlyNumSpies[1];
+        
+        if(x < 1.99 || x > 2.01)
+            print("individual error..." + (2 - x));
+    }
+    
+    void checkAll()
+    {
+        print("startin long check...");
+        for(Group g : groups)
+            check(g.probExactlyNumSpies);
+        print(".....done...");
+    }
+    
+    void check(double values[])
+    {
+        double x = 0;
+        for(double d : values)
+            x += d;
+        
+        if(x < 0.99);
+            //print("Error in values... " + (1-x));
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -207,7 +643,7 @@ public class bayStats {
         if(numTraitors > missionSize)
             return 0;
         
-        return this.suspicionTableValues[SPY_BETRAYS_FIRST_MISSION + missionID-1];
+        return this.suspicionTableValues[TEST_1 + missionID-1];
     }
     
     
@@ -215,8 +651,8 @@ public class bayStats {
     //Estimating mission failing overall:
     private double getProbMissionOutcome(int missionSize, int numTraitors, int totalPool)
     {
-        if(missionSize == numTraitors) //ie perfect game
-            return 0.001;
+        //if(missionSize == numTraitors) //ie perfect game
+          //  return 0.001;
         
         double result = 0;
         
@@ -228,7 +664,7 @@ public class bayStats {
     
     private double probBetrayalsGivenSpies(int missionSize, int numSpies, int numTraitors)
     {
-        if(numSpies < numTraitors)
+        if(numSpies < numTraitors || missionSize < numTraitors)
             return 0;
         
         //Calculate binomial distribution:
@@ -236,9 +672,11 @@ public class bayStats {
         return this.NchooseK(numSpies, numTraitors) * Math.pow(prob, numTraitors) * Math.pow(1 - prob, numSpies - numTraitors);
     }
     
-    
-    
-    
+    private double probSpyGivenAlreadySpies(int givenSpies, int numSpies, int missionSize, int totalPool)
+    {   
+        return ((double) (NchooseK(TOTAL_SPIES-givenSpies, numSpies-givenSpies)*NchooseK(totalPool-TOTAL_SPIES, missionSize-numSpies))) 
+                / (double)NchooseK(totalPool-givenSpies, missionSize-givenSpies);
+    }
     
     
     
@@ -263,15 +701,21 @@ public class bayStats {
         return result;
     }
     
-    double NchooseK(int n, int k)
+    int NchooseK(int n, int k)
     {
         return factorial(n) / (factorial(k) * factorial(n - k));
     }
     
     double probOfNumberSpies(int n, int missionSize, int totalPool)
     {
-        return NchooseK(TOTAL_SPIES, n) / NchooseK(totalPool, missionSize);
+        return ((double) (NchooseK(TOTAL_SPIES, n)*NchooseK(totalPool-TOTAL_SPIES, missionSize-n))) / (double)NchooseK(totalPool, missionSize);
     }
+    
+    double probOfNumberSpies(int n, int missionSize, int totalPool, int totalSpies)
+    {
+        return ((double) (NchooseK(totalSpies, n)*NchooseK(totalPool-totalSpies, missionSize-n))) / (double)NchooseK(totalPool, missionSize);
+    }
+    
     public void logNominations(String leader, char team[])
     {
         int leaderIndex = getPlayerIndex(leader.charAt(0));
@@ -301,6 +745,8 @@ public class bayStats {
         
         numPlayersOnMission = team.length;
         this.leaderLog[missionID] = getPlayerIndex(leader);
+        
+        print("Mission: " + mission + " led by " + leader);
     }
     
     public void logTraitors(int traitors)
@@ -315,8 +761,8 @@ public class bayStats {
     
     private void print(String s)
     {
-        if(ourIndex == 0) ;
-            //System.out.println(s);
+        if(ourIndex == 0) 
+            ;//System.out.println(s);
     }
     
     
@@ -324,78 +770,54 @@ public class bayStats {
     
     public char[] getTeam(int length)
     {
-        List<Integer> trust = new ArrayList<>();
-        
-        for (int i = 0; i < length; i++) {
-            double minSus = -1;
-            int minIndex = 0;
-            for (int j = 0; j < numPlayers; j++) {
-                if((suspicion[j] < minSus || minSus == -1) && !trust.contains(j))
+        double maxProb = 0;
+        int index = 0;
+        for(int i = 0; i < maxIndex; i++)
+        {
+            if(groupSize(i) == length - 1) //as we will put ourselves on
+            {
+                if(groups[i].probExactlyNumSpies[0] > maxProb)
                 {
-                    minIndex = j;
-                    minSus = suspicion[j];
+                    maxProb = groups[i].probExactlyNumSpies[0];
+                    index = i;
                 }
             }
-            trust.add(minIndex);
         }
         
-        char team[] = new char[length];
-        for (int i = 0; i < trust.size(); i++) {
-            team[i] = this.playerList[trust.get(i)];
-        }
+        int team[] = this.indexToGroup(index);
+        char teamWithMe[] = new char[length];
+        int counter = 0;
         
-        return team;
+        teamWithMe[counter++] = playerList[ourIndex];
+        for(int i : team)
+            teamWithMe[counter++] = playerList[i];
+        
+        return teamWithMe;
     }
     
     public boolean containsSpy(int[] group)
     {
-        if(missionID == 0)
+        if(!this.ifInGroup(ourIndex, group))
             return true;
         
-        List<Integer> spies = new ArrayList<>();
+        if(missionID == 0)
+            return false;
         
-        for (int i = 0; i < TOTAL_SPIES; i++) {
-            double maxSus = 0;
-            int maxIndex = 0;
-            for (int j = 0; j < numPlayers; j++) {
-                if(suspicion[j] > maxSus && !spies.contains(j))
+        
+        double minProb = 10000;
+        for(int i = 0; i < maxIndex; i++)
+        {
+            if(groupSize(i) == group.length-1) //as we are on it
+            {
+                if(groups[i].probAtLeastNumSpies[1] < minProb)
                 {
-                    maxIndex = j;
-                    maxSus = suspicion[j];
+                    minProb = groups[i].probAtLeastNumSpies[1];
                 }
             }
-            spies.add(maxIndex);
         }
         
-        print("Likely spies: " + spies.toString());
+        double result = groups[groupIndex(group)].probAtLeastNumSpies[1];
         
-        //Calculate average suspiscion:
-        double avSus = 0;
-        for (int i = 0; i < numPlayers; i++) {
-            avSus += suspicion[i];
-        }
-        avSus /= numPlayers-1;
-        
-        //Calculate how badly we don't want this mission:
-        double teamSus = 0;
-        for (int i = 0; i < group.length; i++) {
-            if(spies.contains(group[i]))
-                teamSus += suspicion[i];
-        }
-        
-        double score = (teamSus/group.length) - avSus;
-        print("Av Score: " + avSus + ", this score: " + teamSus/group.length);
-        print("Score of: " + score);
-        if(score < this.suspicionTableValues[VOTE_THRESHOLD])
-        {
-            return true;
-        }
-        
-        for (int i = 0; i < group.length; i++) {
-            if(spies.contains(group[i]))
-                return false;   
-        }
-        
-        return true;
+        return(result > (minProb));
     }
 }
