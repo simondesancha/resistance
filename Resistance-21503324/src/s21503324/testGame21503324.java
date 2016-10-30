@@ -1,10 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package src.s21503324;
-//import System.out;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +22,7 @@ public class testGame21503324 {
     static void tournaments()
     {
         int spyWins = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000; i++) {
             boolean result = play();
             
             spyWins += result ? 1 : 0;

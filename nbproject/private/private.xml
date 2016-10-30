@@ -3,13 +3,18 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/testGame.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/Game.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/simonGA.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/bayStats.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/genetics2.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/bayBot.java</file>
-            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/main/spySplitter.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/Agent.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/expertSpyBot21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/superGame21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/bayStats21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/smartSpy21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/firstBot21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/testGame21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/expertResistanceBot21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/bayBot21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/secondBot215033241.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/GeneticAlgorithm21503324.java</file>
+            <file>file:/home/nick/resistance/resistance/resistanceAI-master/src/s21503324/MonteCarloTree21503324.java</file>
         </group>
     </open-files>
 </project-private>

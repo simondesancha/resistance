@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package src.s21503324;
 
 
@@ -18,7 +13,8 @@ public class bayBot21503324 implements Agent {
     bayStats21503324 baysian;
     
     //Optimal probability weighting determined by Genetic algorithm:
-    private static final double DEFAULT_VALUES[] = {0.94, 0.93, 0.99, 0.91, 0.62, 1.00};
+    private static final double DEFAULT_VALUES[] = {0.94, 0.93, 0.99, 0.91, 0.62, 0.06};
+    
     double setValues[];
     
     bayBot21503324()

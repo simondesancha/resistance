@@ -1,11 +1,10 @@
 package src.s21503324;
 import java.util.*;
 import java.io.*;
-/**
- * A Class to represent a single game of resistance
- * @author Tim French
- * */
 
+/*
+A slightly edited version of Game.java, as for use in my project.
+*/
 public class superGame21503324{
 
   private Map<Character,Agent> players;

@@ -1,0 +1,21 @@
+For my project I implemented 2 bots, in the form of 2 seperate spy bots, and 2 separate resistance bots.
+
+
+Separate bots:
+	expertSpyBot21503324.java	- simple expert spy bot
+	expertResistanceBot21503324.java	- simple expert resistance bot
+	bayBot2103324.java		- resistance bot using Bayesian updates
+	smartSpy21503324.java		- spy bot using Monte Carlo Tree
+
+Combined bots:
+	firstBot21503324.java	- Combines on expertSpyBot and bayBot from above, the most successful
+	secondBot21503324.java	- Combines on expertResistanceBot and smartSpy from above, the least successful
+
+Misc:
+	superGame21503324.java  - an edited version of Game.java needed for the Monte Carlo Tree
+	GeneticAlgorithm21503324.java 	- a genetic algorithm used to optimise bayBot
+	MonteCarloTree21503324.java	- implementation behind smartSpy
+	bayStats21503324.java		- implementation behind bayBot
+
+Demonstration:
+	testGame21503324.java	- contains a few demonstration/testing functions

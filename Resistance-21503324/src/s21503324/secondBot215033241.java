@@ -1,19 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package src.s21503324;
 
 /*
-A combination of bayBot and expertSpyBot, the best performing resistance and spy bot.
+A combination of smartSpy and expertResistanceBot, the 2 worse performing AI's
  */
-public class firstBot21503324 implements Agent {
+public class secondBot215033241 implements Agent {
 
     private boolean ifInitialised;
     Agent bot;
 
-    firstBot21503324() {
+    secondBot215033241() {
         ifInitialised = false;
     }
 
@@ -23,14 +18,13 @@ public class firstBot21503324 implements Agent {
         if (ifInitialised == false) {
             //Check if we need a spy bot or resistance bot:
             if ((spies.contains(name))) {
-                bot = new expertSpyBot21503324();
+                bot = new smartSpy21503324();
             } else {
-                bot = new bayBot21503324();
+                bot = new expertResistanceBot21503324();
             }
             this.ifInitialised = true;
         }
-        
-        //Pass onto the correct bot
+
         bot.get_status(name, players, spies, mission, failures);
     }
 
