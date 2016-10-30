@@ -4,10 +4,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package src.main;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+package src.s21503324;
 import java.util.Random;
 
 
@@ -16,54 +13,21 @@ import java.util.Random;
  *
  * 
  */
-public class expertResistanceBot implements Agent {
-    
+public class expertResistanceBot21503324 implements Agent {
     private char name;
-    private String spyList;
     private char playerList[];
-    int missionNumber;
     int numPlayers;
     
-    int numFailures;
     Random rand;
     
-    boolean voteValue;
     String missionPlayers;
-    
-    //Game constants:
-    int numMissions;
-    int totalSpies;
-    int requiredFailures;
-    
-    private static final int totalSpiesBase = 5;
-    private static final int totalSpiesList[] = {2, 2, 3, 3, 3, 4}; //[numPlayer - totalSpiesBase] = number of spies in game
-
-    expertResistanceBot() {
-        
-    }
-    
-    
-    
- //   private static final double betrayProb[] = {0.4, 0.8, 0.8, 0.8, 0.8};
     
     @Override
     public void get_status(String name, String players, String spies, int mission, int failures) {
         this.name = name.charAt(0);
         this.playerList = players.toCharArray();
-        this.missionNumber = mission;
         numPlayers = players.length();
-        numFailures = failures;
         rand = new Random();
-        
-        
-        //Game constants:
-        numMissions = 5;
-        requiredFailures = 3;
-        totalSpies = totalSpiesList[numPlayers-totalSpiesBase];
-        
-            
-        
-        //System.out.printf("Spy: %d\n", ifSpy ? 1 : 0);
     }
 
     //Adds ourself and random others:
@@ -89,9 +53,7 @@ public class expertResistanceBot implements Agent {
     }
 
     @Override
-    public boolean do_Vote() {
-        char team[] = missionPlayers.toCharArray();
-        
+    public boolean do_Vote() {        
        if(missionPlayers.indexOf(name) < 0)
            return false;
        
@@ -100,7 +62,6 @@ public class expertResistanceBot implements Agent {
 
     @Override
     public void get_Votes(String yays) {
-        
     }
 
     @Override

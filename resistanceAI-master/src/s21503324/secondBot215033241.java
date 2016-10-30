@@ -3,56 +3,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package src.main;
+package src.s21503324;
 
-/**
- *
- * @author root
+/*
+A combination of smartSpy and expertResistanceBot, the 2 worse performing AI's
  */
-public class spySplitter implements Agent {
+public class secondBot215033241 implements Agent {
+
     private boolean ifInitialised;
     Agent bot;
-    double values[];
-    
-    spySplitter()
-    {
+
+    secondBot215033241() {
         ifInitialised = false;
     }
-    
-    spySplitter(double values[])
-    {
-        this.values = values;
-        ifInitialised = false;
-    }
-    
+
     @Override
     public void get_status(String name, String players, String spies, int mission, int failures) {
-        if(ifInitialised == false)
-        {
-            if((spies.contains(name)))
-            {
-               // System.out.println("bot is ---- Spy");
-                bot = new expertSpyBot();
-            }
-            else
-            {
-              //  System.out.println("bot is ---- resistance");
-                if(values != null)
-                    bot = new bayBot(values);
-                else
-                    bot = new bayBot();
+        //Check if we need to initialised our bots:
+        if (ifInitialised == false) {
+            //Check if we need a spy bot or resistance bot:
+            if ((spies.contains(name))) {
+                bot = new smartSpy21503324();
+            } else {
+                bot = new expertResistanceBot21503324();
             }
             this.ifInitialised = true;
         }
-        
+
         bot.get_status(name, players, spies, mission, failures);
-    }
-    
-    public int getPlayerIndex(char player)
-    {
-        if(bot instanceof bayBot)
-            return ((bayBot)bot).getPlayerIndex(player);
-        return 0;
     }
 
     @Override
@@ -99,5 +77,5 @@ public class spySplitter implements Agent {
     public void get_Accusation(String accuser, String accused) {
         bot.get_Accusation(accuser, accused);
     }
-    
+
 }

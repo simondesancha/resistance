@@ -1,4 +1,4 @@
-package src.main;
+package src.s21503324;
 import java.util.*;
 import java.io.*;
 /**
@@ -6,7 +6,7 @@ import java.io.*;
  * @author Tim French
  * */
 
-public class Game{
+public class superGame21503324{
 
   private Map<Character,Agent> players;
   private Set<Character> spies;
@@ -28,7 +28,7 @@ public class Game{
    * Creates an empty game.
    * Game log printed to stdout
    * */
-  public Game(){
+  public superGame21503324(){
     init();
   }
 
@@ -36,7 +36,7 @@ public class Game{
    * Creates an empty game
    * @param logFile path to the log file
    * */
-  public Game(String fName){
+  public superGame21503324(String fName){
     logFile = new File(fName);
     logging = true;
     init();
@@ -114,6 +114,25 @@ public class Game{
               resString += '?';
           }
           statusUpdate(1, 0);
+          started = true;
+          log("Game set up. Spys allocated");
+      }
+  }
+  
+  public void setupForMCT(int missionNumber, int failures){
+      if (numPlayers < 5)
+          throw new RuntimeException("Too few players");
+      else if (started)
+          throw new RuntimeException("Game already underway");
+      else {
+          for (Character c : players.keySet()) {
+              playerString += c;
+          }
+          for (Character c : spies) {
+              spyString += c;
+              resString += '?';
+          }
+          statusUpdate(missionNumber, failures);
           started = true;
           log("Game set up. Spys allocated");
       }
@@ -304,21 +323,50 @@ public class Game{
     
     return fails > 2;
   }
+  
+    public boolean playForMCT(int missionNumber, int failures, boolean ifVoting, int votingTime, String team) {
+        int fails = failures;
+        for (int round = missionNumber; round <= 5; round++) {
+            if (ifVoting) {
+                while (votingTime++ < 5 && !vote()) {
+                    team = nominate(round);
+                }
+                log(team + " elected");
+            }
 
+            int traitors = mission(team);
+            if (traitors != 0 && (traitors != 1 || round != 4 || numPlayers < 7)) {
+                fails++;
+                log("Mission failed");
+            } else {
+                log("Mission succeeded");
+            }
+            statusUpdate(round + 1, fails);
+            HashMap<Character, String> accusations = new HashMap<Character, String>();
+            for (Character c : players.keySet()) {
+                stopwatchOn();
+                accusations.put(c, players.get(c).do_Accuse());
+                stopwatchOff(1000, c);
+            }
+            for (Character c : players.keySet()) {
+                log(c + " accuses " + accusations.get(c));
+                for (Character a : players.keySet()) {
+                    stopwatchOn();
+                    players.get(a).get_Accusation(c + "", accusations.get(c));
+                    stopwatchOff(100, c);
+                }
+            }
+        }
+        if (fails > 2) {
+            log("Government Wins! " + fails + " missions failed.");
+        } else {
+            log("Resistance Wins! " + fails + " missions failed.");
+        }
+        log("The Government Spies were " + spyString + ".");
 
-  /**
-   * Sets up game with random agents and plays
-   **/
-  public static void Random(){
-    Game g = new Game();
-    g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'A');
-    g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'B');
-    g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'C');
-    g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'D');
-    g.stopwatchOn();g.addPlayer(new RandomAgent());g.stopwatchOff(1000,'E');
-    g.setup();
-    //g.play();
-  }
+        return fails > 2;
+    }
+
 }  
         
         

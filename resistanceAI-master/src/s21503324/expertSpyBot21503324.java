@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package src.main;
+package src.s21503324;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.Random;
  *
  * 
  */
-public class expertSpyBot implements Agent {
+public class expertSpyBot21503324 implements Agent {
     
     private String name;
     private String spyList;
@@ -30,6 +30,10 @@ public class expertSpyBot implements Agent {
     boolean voteValue;
     String missionPlayers;
     
+    boolean ifUnderMCT = false;
+    boolean ifToVoteRandom = false;
+    boolean ifVote = false;
+    
     //Game constants:
     int numMissions;
     int totalSpies;
@@ -37,6 +41,18 @@ public class expertSpyBot implements Agent {
     
     private static final int totalSpiesBase = 5;
     private static final int totalSpiesList[] = {2, 2, 3, 3, 3, 4}; //[numPlayer - totalSpiesBase] = number of spies in game
+    
+    
+    expertSpyBot21503324()
+    {
+        
+    }
+    
+    expertSpyBot21503324(boolean toVoteNextRound)
+    {
+        ifUnderMCT = true;
+        ifVote = toVoteNextRound;
+    }
     
     @Override
     public void get_status(String name, String players, String spies, int mission, int failures) {
@@ -47,10 +63,8 @@ public class expertSpyBot implements Agent {
         numFailures = failures;
         
         spyList = spies;
-        //spyList = new ArrayList<Character>(Arrays.asList(spies.toCharArray()));
         
         resistanceList = new String[players.length() - spies.length()];
-        //resistanceList = new String[players.length()];
         
         int i = 0;
         for(int j = 0; j < playerList.length(); j++)// String p : playerList)
@@ -63,10 +77,6 @@ public class expertSpyBot implements Agent {
             
             resistanceList[i++] = p;            
         }
-        
-        if(mission == 1)
-            ;//System.out.println("Spy: " + name);
-        
         
         //Game constants:
         numMissions = 5;
@@ -98,6 +108,19 @@ public class expertSpyBot implements Agent {
 
     @Override
     public boolean do_Vote() {
+        if(ifUnderMCT)
+        {
+            ifUnderMCT = false;
+            ifToVoteRandom = true;
+            return ifVote;
+        }
+        else if(ifToVoteRandom)
+        {
+            return (new Random()).nextBoolean();
+        }
+            
+        
+        
         char team[] = missionPlayers.toCharArray();
         
         int numSpies = 0;
@@ -118,8 +141,6 @@ public class expertSpyBot implements Agent {
         if(numSpies == totalSpies)
             return false;
         
-        
-        
         return numSpies > 0;
     }
 
@@ -135,6 +156,25 @@ public class expertSpyBot implements Agent {
 
     @Override
     public boolean do_Betray() {
+        if(ifUnderMCT)
+        {
+            ifUnderMCT = false;
+            ifToVoteRandom = true;
+            return ifVote;
+        }
+        
+        //ie need to sabotage every mission in order to win
+        if(requiredFailures - numFailures > numMissions - missionNumber)
+        {
+            return true;
+        }
+        
+        if(requiredFailures - numFailures == 1)
+            return true;
+        
+        if(ifToVoteRandom)
+            return (new Random()).nextBoolean();
+        
         char team[] = missionPlayers.toCharArray();
         
         int numSpies = 0;
@@ -147,9 +187,6 @@ public class expertSpyBot implements Agent {
         if(numSpies == 1)
             return true;
         
-        //ie need to sabotage every mission in order to win
-        if(requiredFailures - numFailures > numMissions - missionNumber)
-            return true;
             
         return false;
     }

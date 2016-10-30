@@ -3,18 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package src.main;
+package src.s21503324;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 /**
- *
- * @author root
+Genetic Algorithm used to find the optimal probability weightings to use in bayBot
  */
-public class simonGA {
+public class GeneticAlgorithm21503324 {
     Random rand;
     
     //GA properties:
@@ -32,7 +30,7 @@ public class simonGA {
     private class Individual {
         private static final int NUMBER_GENES = 6;
         double genes[];
-        bayBot bot;
+        bayBot21503324 bot;
         
         Individual()
         {
@@ -44,19 +42,17 @@ public class simonGA {
                 genes[i] = rand.nextDouble();
             }
             
-            //genes = DEFAULT_GENES;
-            
-            bot = new bayBot(genes);
+            bot = new bayBot21503324(genes);
         }
         
         Individual(double values[])
         {
             genes = values;
             
-            bot = new bayBot(genes);
+            bot = new bayBot21503324(genes);
         }
         
-        bayBot getBot()
+        bayBot21503324 getBot()
         {
             return bot;
         }
@@ -83,7 +79,7 @@ public class simonGA {
             Agent bots[] = new Agent[3];
             
             for (int i = 0; i < 3; i++) {
-                bots[i] = new bayBot(values);
+                bots[i] = new bayBot21503324(values);
             }
             
             result += getResult(bots) ? 1 : 0;
@@ -91,16 +87,6 @@ public class simonGA {
         
         return result/TOURNAMENT_LENGTH;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     void runGA()
     {
@@ -249,7 +235,7 @@ public class simonGA {
             Agent bots[] = new Agent[TOURNAMENT_SIZE];
             
             for (int i = 0; i < TOURNAMENT_SIZE; i++) {
-                bots[i] = new bayBot(population[ID].genes);
+                bots[i] = new bayBot21503324(population[ID].genes);
             }
             
             result += getResult(bots) ? 1 : 0;
@@ -266,7 +252,7 @@ public class simonGA {
             Agent bots[] = new Agent[TOURNAMENT_SIZE];
             
             for (int i = 0; i < TOURNAMENT_SIZE; i++) {
-                bots[i] = new bayBot(population[ID[i]].genes);
+                bots[i] = new bayBot21503324(population[ID[i]].genes);
             }
             
             result += getResult(bots) ? 1 : 0;
@@ -279,23 +265,23 @@ public class simonGA {
     {
         Agent agents[] = new Agent[TOURNAMENT_SIZE+2];
         
-        agents[0] = new expertSpyBot();
-        agents[1] = new expertSpyBot();
+        agents[0] = new expertSpyBot21503324();
+        agents[1] = new expertSpyBot21503324();
         
         for (int i = 0; i < TOURNAMENT_SIZE; i++) {
             agents[2+i] = resistancePlayers[i];
         }
         
-        Game game = randomlyAllocate(agents);
+        superGame21503324 game = randomlyAllocate(agents);
         
         boolean spyWin = game.play();
         
         return !spyWin;
     }
     
-    Game randomlyAllocate(Agent agents[])
+    superGame21503324 randomlyAllocate(Agent agents[])
     {
-        Game game = new Game();
+        superGame21503324 game = new superGame21503324();
         
         List<Integer> done = new ArrayList<>();
         for (int i = 0; i < agents.length; i++) {
@@ -331,15 +317,15 @@ public class simonGA {
     {
         Agent agents[] = new Agent[TOURNAMENT_SIZE+2];
         
-        agents[0] = new expertSpyBot();
-        agents[1] = new expertSpyBot();
+        agents[0] = new expertSpyBot21503324();
+        agents[1] = new expertSpyBot21503324();
         
         //bayBot bots[] = new bayBot[3];
         for (int i = 0; i < TOURNAMENT_SIZE; i++) {
             agents[2+i] = population[indexes[i]].getBot();
         }
         
-        Game game = randomlyAllocate(agents);
+        superGame21503324 game = randomlyAllocate(agents);
         
         boolean spyWin = game.play();
         
